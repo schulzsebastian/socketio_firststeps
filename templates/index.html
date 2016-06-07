@@ -5,38 +5,79 @@
       <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0-rc1/jquery.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.0/knockout-min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.6/socket.io.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js"></script>
+      <script src="{{ url_for('static', filename='js/leaflet.label.js') }}"></script>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-icon.png">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png">
+      <link rel="stylesheet" href="{{ url_for('static', filename='css/leaflet.label.css') }}">
   </head>
   <body>
   <style>
+  html, body{
+    margin: 0px;
+    padding: 0px;
+    width: 100%;
+    height: 100%;
+  }
+  #map{
+    position: relative;
+    height: 100%;
+    min-height: 180px;
+    width: 100%;
+  }
   </style>
-  <div data-bind="visible: notlogged">
-    <input data-bind="value: username"></input><button data-bind="click: login">Login</button>
-  </div>
-  <div data-bind="visible: logged">
-    <input data-bind="value: data"></input>
-    <button data-bind="click: broadcast">Send</button>
-    <div id="log"></div>
-  </div>
+  <!-- ko ifnot: logged-->
+  <label>Enter your nick:</label><input data-bind="value: username"></input><button data-bind="click: login">Login</button>
+  <!-- /ko -->
+  <!-- ko if: logged-->
+  <div id="map"></div>
+  <!-- /ko -->
   <script>
     function indexModel() {
       var self = this;
-      self.data = ko.observable('')
       self.username = ko.observable('')
-      self.notlogged = ko.observable(true)
       self.logged = ko.observable(false)
+      self.map = undefined
 
       var socket = io.connect('http://'+document.domain+':'+location.port+'/broadcast');
-      socket.on('response', function(msg) {
-          $('#log').append('<p>'+msg.username+': '+msg.data+'</p>');
+      socket.on('response', function(msg){
+        self.map.eachLayer(function(layer){
+          try{
+            if(layer.label._content == self.username()){
+              self.map.removeLayer(layer)
+            }
+          }catch(e){}
+        });
+        L.marker(msg.coords).bindLabel(self.username(), {noHide:true}).addTo(self.map);
       });
-
+      // Login function
       self.login = function(){
         self.logged(true)
-        self.notlogged(false)
+        self.map = L.map('map')
+        self.map.setView([52.3700, 16.9700], 11);
+        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          {attribution: '&copy; <a href="http://osm.org/copyright" title="OpenStreetMap" target="_blank">OpenStreetMap</a>'})
+          .addTo(self.map);
+        if(navigator.geolocation){
+          navigator.geolocation.watchPosition(self.getLocation, self.showErrors, {timeout:60000,enableHighAccuracy:true});
+        }else{
+          console.log("What the fuck is that?")
+        }
       }
-      self.broadcast = function(){
-        socket.emit('broadcast', {username: self.username(), data: self.data()});
-        self.data('')
+      // Start positioning
+      self.showErrors = function(error){
+        if(err.code == 1) {
+           console.log("Access is denied!");
+        }else if(err.code == 2) {
+           console.log("Position is unavailable!");
+        }
+      }
+      self.getLocation = function(position){
+        self.broadcastLocation([position.coords.latitude, position.coords.longitude], position.coords.accuracy)
+      }
+      self.broadcastLocation = function(coords,acc){
+        socket.emit('broadcast', {username: self.username(), coords: coords, acc:acc});
         return false;
       }
     };
