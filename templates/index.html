@@ -1,0 +1,47 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+      <title></title>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0-rc1/jquery.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.0/knockout-min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.6/socket.io.min.js"></script>
+  </head>
+  <body>
+  <style>
+  </style>
+  <div data-bind="visible: notlogged">
+    <input data-bind="value: username"></input><button data-bind="click: login">Login</button>
+  </div>
+  <div data-bind="visible: logged">
+    <input data-bind="value: data"></input>
+    <button data-bind="click: broadcast">Send</button>
+    <div id="log"></div>
+  </div>
+  <script>
+    function indexModel() {
+      var self = this;
+      self.data = ko.observable('')
+      self.username = ko.observable('')
+      self.notlogged = ko.observable(true)
+      self.logged = ko.observable(false)
+
+      var socket = io.connect('http://'+document.domain+':'+location.port+'/broadcast');
+      socket.on('response', function(msg) {
+          $('#log').append('<p>'+msg.username+': '+msg.data+'</p>');
+      });
+
+      self.login = function(){
+        self.logged(true)
+        self.notlogged(false)
+      }
+      self.broadcast = function(){
+        socket.emit('broadcast', {username: self.username(), data: self.data()});
+        self.data('')
+        return false;
+      }
+    };
+    var vm = new indexModel();
+    ko.applyBindings(vm);
+  </script>
+</body>
+</html>
