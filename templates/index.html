@@ -27,45 +27,39 @@
     width: 100%;
   }
   </style>
-  <!-- ko ifnot: logged-->
-  <label>Enter your nick:</label><input data-bind="value: username"></input><button data-bind="click: login">Login</button>
-  <!-- /ko -->
-  <!-- ko if: logged-->
   <div id="map"></div>
-  <!-- /ko -->
   <script>
     function indexModel() {
       var self = this;
-      self.username = ko.observable('')
-      self.logged = ko.observable(false)
-      self.map = undefined
-
+      self.username = ko.observable('Sebastian')
+      self.map = L.map('map')
+      self.map.setView([52.3700, 16.9700], 11);
+      L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        {attribution: '&copy; <a href="http://osm.org/copyright" title="OpenStreetMap" target="_blank">OpenStreetMap</a>'})
+        .addTo(self.map);
       var socket = io.connect('http://'+document.domain+':'+location.port+'/broadcast');
       socket.on('response', function(msg){
         self.map.eachLayer(function(layer){
           try{
-            if(layer.label._content == self.username()){
+            if(layer._content == self.username() || layer.options.customLabel == self.username()){
               self.map.removeLayer(layer)
             }
           }catch(e){}
         });
-        L.marker(msg.coords).bindLabel(self.username(), {noHide:true}).addTo(self.map);
+        var circle = L.circle(msg.coords, msg.acc, {
+          color: 'red',
+          fillColor: '#f03',
+          fillOpacity: 0.5,
+          customLabel: self.username()
+        }).addTo(self.map);
+        label = new L.Label()
+        label.setContent(self.username())
+        label.setLatLng(msg.coords)
+        self.map.showLabel(label);
       });
-      // Login function
-      self.login = function(){
-        self.logged(true)
-        self.map = L.map('map')
-        self.map.setView([52.3700, 16.9700], 11);
-        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          {attribution: '&copy; <a href="http://osm.org/copyright" title="OpenStreetMap" target="_blank">OpenStreetMap</a>'})
-          .addTo(self.map);
-        if(navigator.geolocation){
-          navigator.geolocation.watchPosition(self.getLocation, self.showErrors, {timeout:60000,enableHighAccuracy:true});
-        }else{
-          console.log("What the fuck is that?")
-        }
+      self.getLocation = function(position){
+        self.broadcastLocation([position.coords.latitude, position.coords.longitude], position.coords.accuracy)
       }
-      // Start positioning
       self.showErrors = function(error){
         if(err.code == 1) {
            console.log("Access is denied!");
@@ -73,12 +67,14 @@
            console.log("Position is unavailable!");
         }
       }
-      self.getLocation = function(position){
-        self.broadcastLocation([position.coords.latitude, position.coords.longitude], position.coords.accuracy)
-      }
       self.broadcastLocation = function(coords,acc){
         socket.emit('broadcast', {username: self.username(), coords: coords, acc:acc});
         return false;
+      }
+      if(navigator.geolocation){
+        navigator.geolocation.watchPosition(self.getLocation, self.showErrors, {timeout:60000,enableHighAccuracy:true});
+      }else{
+        console.log("What the fuck is that?")
       }
     };
     var vm = new indexModel();
