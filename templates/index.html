@@ -7,10 +7,14 @@
       <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.6/socket.io.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js"></script>
       <script src="{{ url_for('static', filename='js/leaflet.label.js') }}"></script>
+      <script src="{{ url_for('static', filename='js/alertify.js') }}"></script>
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css">
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-icon.png">
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png">
+      <link rel="image/png" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-icon.png">
+      <link rel="image/png" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png">
       <link rel="stylesheet" href="{{ url_for('static', filename='css/leaflet.label.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', filename='css/alertify.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', filename='css/alertify.default.css') }}">
+
   </head>
   <body>
   <style>
@@ -37,7 +41,7 @@
       L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         {attribution: '&copy; <a href="http://osm.org/copyright" title="OpenStreetMap" target="_blank">OpenStreetMap</a>'})
         .addTo(self.map);
-      var socket = io.connect('http://'+document.domain+':5005/brodcast');
+      var socket = io.connect('http://'+document.domain+':'+location.port+'/broadcast');
       socket.on('response', function(msg){
         self.map.eachLayer(function(layer){
           try{
@@ -71,11 +75,30 @@
         socket.emit('broadcast', {username: self.username(), coords: coords, acc:acc});
         return false;
       }
-      if(navigator.geolocation){
-        navigator.geolocation.watchPosition(self.getLocation, self.showErrors, {timeout:60000,enableHighAccuracy:true});
-      }else{
-        console.log("What the fuck is that?")
-      }
+      alertify.defaults.glossary.title = 'Tracking'
+      alertify.prompt("Your nickname:", "",
+      function(evt, value){
+        if(value){
+          self.username(value)
+        }else{
+          self.username(Math.random().toString(36).substring(20))
+        }
+        if(navigator.geolocation){
+          navigator.geolocation.watchPosition(self.getLocation, self.showErrors, {timeout:60000,enableHighAccuracy:true});
+          alertify.success("Logged as: "+self.username())
+        }else{
+          console.log("What the fuck is that?")
+        }
+      },
+      function(){
+        self.username(Math.random().toString(36).substring(20))
+        if(navigator.geolocation){
+          navigator.geolocation.watchPosition(self.getLocation, self.showErrors, {timeout:60000,enableHighAccuracy:true});
+          alertify.success("Logged as: "+self.username())
+        }else{
+          console.log("What the fuck is that?")
+        }
+      })
     };
     var vm = new indexModel();
     ko.applyBindings(vm);
