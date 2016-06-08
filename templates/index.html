@@ -75,7 +75,7 @@
       }
       self.logIn = function(username){
         self.username(username)
-        self.socket = io.connect('http://'+document.domain+':'+location.port+'/broadcast')
+        self.socket = io.connect('https://'+document.domain+':'+location.port+'/broadcast')
         self.socket.emit('server_connect', {username:self.username()});
         self.socket.on('server_connect', function(msg){
           alertify.success('User '+msg.username+' logged in.')
