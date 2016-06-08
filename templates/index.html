@@ -40,7 +40,7 @@
       L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       {attribution: '&copy; <a href="http://osm.org/copyright" title="OpenStreetMap" target="_blank">OpenStreetMap</a>'})
       .addTo(self.map);
-      self.updateLocations = function(username, coords, acc){
+      self.clearMap= function(username){
         self.map.eachLayer(function(layer){
           try{
             if(layer._content == username || layer.options.customLabel == username){
@@ -48,6 +48,9 @@
             }
           }catch(e){}
         });
+      }
+      self.updateLocations = function(username, coords, acc){
+        self.clearMap(username)
         L.circle(coords, acc, {
           color: 'red',
           fillColor: '#f03',
@@ -81,10 +84,15 @@
           self.updateLocations(msg.username, msg.coords, msg.acc)
         })
         self.socket.on('disconnect', function(msg){
-          alertify.error('User '+msg.username+' disconnected')
+          if(msg.username == undefined){
+            alertify.error('Server disconnected')
+          }else{
+            alertify.error('User '+msg.username+' disconnected')
+            self.clearMap(msg.username)
+          }
         })
         if(navigator.geolocation){
-          navigator.geolocation.watchPosition(self.broadcastLocation, self.showErrors, {timeout:10000,enableHighAccuracy:true});
+          navigator.geolocation.watchPosition(self.broadcastLocation, self.showErrors, {maximumAge:1000});
         }else{
           console.log("What the fuck is wrong with this browser?")
         }
