@@ -14,7 +14,6 @@
       <link rel="stylesheet" href="{{ url_for('static', filename='css/leaflet.label.css') }}">
       <link rel="stylesheet" href="{{ url_for('static', filename='css/alertify.css') }}">
       <link rel="stylesheet" href="{{ url_for('static', filename='css/alertify.default.css') }}">
-
   </head>
   <body>
   <style>
@@ -35,70 +34,71 @@
   <script>
     function indexModel() {
       var self = this;
-      self.username = ko.observable('Sebastian')
+      self.username = ko.observable('')
       self.map = L.map('map')
       self.map.setView([52.3700, 16.9700], 11);
       L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        {attribution: '&copy; <a href="http://osm.org/copyright" title="OpenStreetMap" target="_blank">OpenStreetMap</a>'})
-        .addTo(self.map);
-      var socket = io.connect('http://'+document.domain+':'+location.port+'/broadcast');
-      socket.on('response', function(msg){
+      {attribution: '&copy; <a href="http://osm.org/copyright" title="OpenStreetMap" target="_blank">OpenStreetMap</a>'})
+      .addTo(self.map);
+      self.updateLocations = function(username, coords, acc){
         self.map.eachLayer(function(layer){
           try{
-            if(layer._content == self.username() || layer.options.customLabel == self.username()){
+            if(layer._content == username || layer.options.customLabel == username){
               self.map.removeLayer(layer)
             }
           }catch(e){}
         });
-        var circle = L.circle(msg.coords, msg.acc, {
+        L.circle(coords, acc, {
           color: 'red',
           fillColor: '#f03',
           fillOpacity: 0.5,
-          customLabel: self.username()
+          customLabel: username
         }).addTo(self.map);
         label = new L.Label()
-        label.setContent(self.username())
-        label.setLatLng(msg.coords)
+        label.setContent(username)
+        label.setLatLng(coords)
         self.map.showLabel(label);
-      });
-      self.getLocation = function(position){
-        self.broadcastLocation([position.coords.latitude, position.coords.longitude], position.coords.accuracy)
+      }
+      self.broadcastLocation = function(position){
+        self.socket.emit('location', {username: self.username(), coords: [position.coords.latitude, position.coords.longitude], acc:position.coords.accuracy});
+        return false;
       }
       self.showErrors = function(error){
-        if(error.code == 1) {
+        if(error.code == 1){
            console.log("Access is denied!");
-        }else if(error.code == 2) {
+        }else if(error.code == 2){
            console.log("Position is unavailable!");
         }
       }
-      self.broadcastLocation = function(coords,acc){
-        socket.emit('broadcast', {username: self.username(), coords: coords, acc:acc});
-        return false;
+      self.logIn = function(username){
+        self.username(username)
+        self.socket = io.connect('http://'+document.domain+':'+location.port+'/broadcast')
+        self.socket.emit('server_connect', {username:self.username()});
+        self.socket.on('server_connect', function(msg){
+          alertify.success('User '+msg.username+' logged in.')
+        })
+        self.socket.on('locations', function(msg){
+          self.updateLocations(msg.username, msg.coords, msg.acc)
+          console.log(msg.username)
+        })
+        if(navigator.geolocation){
+          navigator.geolocation.watchPosition(self.broadcastLocation, self.showErrors, {timeout:10000,enableHighAccuracy:true});
+        }else{
+          console.log("What the fuck is wrong with this browser?")
+        }
+      }
+      self.onClickOK = function(evt, username){
+        if(username){
+          self.logIn(username)
+        }else{
+          self.logIn(Math.random().toString(36).substring(20))
+        }
+      }
+      self.onClickCancel = function(){
+        self.logIn(Math.random().toString(36).substring(20))
       }
       alertify.defaults.glossary.title = 'Tracking'
-      alertify.prompt("Your nickname:", "",
-      function(evt, value){
-        if(value){
-          self.username(value)
-        }else{
-          self.username(Math.random().toString(36).substring(20))
-        }
-        if(navigator.geolocation){
-          navigator.geolocation.watchPosition(self.getLocation, self.showErrors, {timeout:60000,enableHighAccuracy:true});
-          alertify.success("Logged as: "+self.username())
-        }else{
-          console.log("What the fuck is that?")
-        }
-      },
-      function(){
-        self.username(Math.random().toString(36).substring(20))
-        if(navigator.geolocation){
-          navigator.geolocation.watchPosition(self.getLocation, self.showErrors, {timeout:60000,enableHighAccuracy:true});
-          alertify.success("Logged as: "+self.username())
-        }else{
-          console.log("What the fuck is that?")
-        }
-      })
+      alertify.prompt("Your nickname:", "", self.onClickOK, self.onClickCancel)
     };
     var vm = new indexModel();
     ko.applyBindings(vm);
