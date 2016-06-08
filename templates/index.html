@@ -79,7 +79,9 @@
         })
         self.socket.on('locations', function(msg){
           self.updateLocations(msg.username, msg.coords, msg.acc)
-          console.log(msg.username)
+        })
+        self.socket.on('disconnect', function(msg){
+          alertify.error('User '+msg.username+' disconnected')
         })
         if(navigator.geolocation){
           navigator.geolocation.watchPosition(self.broadcastLocation, self.showErrors, {timeout:10000,enableHighAccuracy:true});
