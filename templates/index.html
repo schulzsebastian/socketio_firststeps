@@ -37,7 +37,7 @@
       L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
         {attribution: '&copy; <a href="http://osm.org/copyright" title="OpenStreetMap" target="_blank">OpenStreetMap</a>'})
         .addTo(self.map);
-      var socket = io.connect('http://tracking.schulzsebastian.com:5001/broadcast');
+      var socket = io.connect('http://'+document.domain+':5005/brodcast');
       socket.on('response', function(msg){
         self.map.eachLayer(function(layer){
           try{
