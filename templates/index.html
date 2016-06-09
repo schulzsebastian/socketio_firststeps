@@ -3,17 +3,17 @@
   <head>
       <title>Live tracking</title>
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-      <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0-rc1/jquery.min.js"></script>
-      <script src="http://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.0/knockout-min.js"></script>
-      <script src="http://cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.6/socket.io.min.js"></script>
-      <script src="http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0-rc1/jquery.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.0/knockout-min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.6/socket.io.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/js/materialize.js"></script>
       <script src="{{ url_for('static', filename='js/leaflet.label.js') }}"></script>
       <script src="{{ url_for('static', filename='js/alertify.js') }}"></script>
-      <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.css">
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.6/css/materialize.css">
-      <link rel="image/png" href="http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-icon.png">
-      <link rel="image/png" href="http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png">
+      <link rel="image/png" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-icon.png">
+      <link rel="image/png" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png">
       <link rel="stylesheet" href="{{ url_for('static', filename='css/leaflet.label.css') }}">
       <link rel="stylesheet" href="{{ url_for('static', filename='css/alertify.css') }}">
       <link rel="stylesheet" href="{{ url_for('static', filename='css/alertify.default.css') }}">
@@ -53,7 +53,7 @@
       self.chatMessage = ko.observable('')
       self.map = L.map('map')
       self.map.setView([52.3700, 16.9700], 11);
-      L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       {attribution: '&copy; <a href="http://osm.org/copyright" title="OpenStreetMap" target="_blank">OpenStreetMap</a>'})
       .addTo(self.map);
       self.sendMessage = function(){
@@ -100,7 +100,7 @@
       }
       self.logIn = function(username){
         self.username(username)
-        self.socket = io.connect('http://'+document.domain+':'+location.port+'/broadcast')
+        self.socket = io.connect('https://'+document.domain+':'+location.port+'/broadcast')
         self.socket.emit('server_connect', {username:self.username()});
         self.socket.on('server_connect', function(msg){
           alertify.success('User '+msg.username+' logged in.')
