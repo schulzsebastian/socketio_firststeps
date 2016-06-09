@@ -20,10 +20,5 @@ def server_connect(message):
     emit('server_connect', {'username': message['username']}, broadcast=True)
     print 'User '+message['username']+' logged in.'
 
-@socketio.on('disconnect', namespace='/broadcast')
-def disconnect():
-    emit('disconnect', {'username': session['username']})
-    print 'User '+session['username']+' disconnected.'
-
 if __name__ == '__main__':
-    socketio.run(app)
+    socketio.run(app, host="0.0.0.0", port=5005)

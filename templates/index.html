@@ -81,7 +81,7 @@
           alertify.success('User '+msg.username+' logged in.')
         })
         self.socket.on('locations', function(msg){
-          self.updateLocations(msg.username, msg.coords, msg.acc)
+          setTimeout(self.updateLocations(msg.username, msg.coords, msg.acc),1000)
         })
         self.socket.on('disconnect', function(msg){
           if(msg.username == undefined){
