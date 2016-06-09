@@ -1,2 +1,3 @@
 *.pyc
 trackingenv/
+nohup.out
